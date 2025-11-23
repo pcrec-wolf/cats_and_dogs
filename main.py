@@ -1,4 +1,3 @@
-# main.py
 import image_api
 import Ya_disk
 import json
