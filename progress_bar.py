@@ -3,7 +3,7 @@ import time
 
 
 class ProgressBar:
-    def __init__(self, total=100, prefix='', suffix='', length=50, fill='█'):
+    def __init__(self, total=100, prefix='', suffix='', length=50, fill='#'):
         self.total = total
         self.prefix = prefix
         self.suffix = suffix
@@ -46,3 +46,6 @@ def simulate_progress(prefix='Progress', total=100, delay=0.1):
     for i in range(total + 1):
         time.sleep(delay)
         bar.update(i)
+
+if __name__ == '__main__':
+    simulate_progress(prefix='Progress', total=100, delay=0.1)
