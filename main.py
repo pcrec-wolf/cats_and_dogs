@@ -2,27 +2,40 @@ import image_api
 import Ya_disk
 import json
 from config import YA_TOKEN, FOLDER_NAME
+from progress_bar import ProgressBar
 
 
 def save_info_to_json(info_data, filename="upload_info.json"):
     """Сохраняет информацию о загруженных файлах в JSON"""
+    print("Сохранение информации...")
+    bar = ProgressBar(total=100, prefix='Сохранение JSON', suffix='Complete', length=30)
+
     try:
+        bar.update(50)
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(info_data, f, ensure_ascii=False, indent=2)
+        bar.finish()
         print(f"Информация сохранена в {filename}")
     except Exception as e:
+        bar.update(100)
         print(f"Ошибка сохранения JSON: {e}")
 
 
 def show_dog_breeds(image_api):
     """Показать доступные породы собак"""
     print("\nПолучение списка пород...")
+    bar = ProgressBar(total=100, prefix='Загрузка пород', suffix='Complete', length=30)
+
+    bar.update(30)
     breeds = image_api.get_all_dog_breeds()
+    bar.update(70)
 
     if not breeds:
+        bar.update(100)
         print("Не удалось получить список пород")
         return None
 
+    bar.finish()
     print("\nДоступные породы:")
     breed_list = list(breeds.keys())
     for i, breed in enumerate(breed_list[:20], 1):  # Показываем первые 20 пород
@@ -82,12 +95,31 @@ def choose_image_type(image_api):
         return None, None
 
 
+def save_image_locally(image_data, file_name):
+    """Сохраняет изображение локально"""
+    print("Сохранение локальной копии...")
+    bar = ProgressBar(total=100, prefix='Локальное сохранение', suffix='Complete', length=30)
+
+    try:
+        bar.update(50)
+        local_path = f"temp_{file_name}"
+        with open(local_path, "wb") as f:
+            f.write(image_data)
+        bar.finish()
+        print(f"Картинка сохранена локально: {local_path}")
+        return local_path
+    except Exception as e:
+        bar.update(100)
+        print(f"Ошибка сохранения локальной копии: {e}")
+        return None
+
+
 def main():
     # Инициализация API
     api = image_api.ImageAPI()
 
     # Получаем токен
-    token = YA_TOKEN or input('Введите токен Яндекс.Диска: ').strip()
+    token = input('Введите токен Яндекс.Диска: ').strip() or YA_TOKEN
 
     if not token or token == 'your_token_here':
         print("Ошибка: Не указан токен Яндекс.Диска")
@@ -101,10 +133,10 @@ def main():
         return
 
     # Сохраняем локально для проверки
-    local_path = f"temp_{file_name}"
-    with open(local_path, "wb") as f:
-        f.write(image_data)
-    print(f"Картинка скачана и сохранена локально: {local_path}")
+    local_path = save_image_locally(image_data, file_name)
+
+    if not local_path:
+        return
 
     # Работа с Яндекс.Диском
     yandex_disk = Ya_disk.YandexDisk(token)
@@ -117,9 +149,8 @@ def main():
     # Загружаем на Яндекс.Диск
     remote_path = f"{FOLDER_NAME}/{file_name}"
 
-    print("Загрузка на Яндекс.Диск...")
     if yandex_disk.upload_file(remote_path, image_data):
-        print(f"Картинка успешно загружена на Яндекс.Диск: {remote_path}")
+        print(f"✓ Картинка успешно загружена на Яндекс.Диск: {remote_path}")
 
         # Получаем информацию о файле
         file_info = yandex_disk.get_file_info(remote_path)
@@ -137,10 +168,11 @@ def main():
 
             save_info_to_json([info_data])
             print(f"Размер файла: {file_info.get('size', 0)} байт")
+            print("✓ Все операции завершены успешно!")
         else:
             print("Не удалось получить информацию о файле")
     else:
-        print("Ошибка загрузки на Яндекс.Диск")
+        print("✗ Ошибка загрузки на Яндекс.Диск")
 
 
 if __name__ == "__main__":
